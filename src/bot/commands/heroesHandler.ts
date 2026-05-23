@@ -13,6 +13,15 @@ client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
   if (interaction.commandName !== 'heroes') return;
 
+  if (!interaction.inGuild()) {
+    await interaction.reply({
+      content: 'Ta komenda działa tylko na serwerze.',
+      ephemeral: true,
+    });
+    return;
+  }
+
+  const guild = interaction.guild!;
   const p1 = interaction.options.getUser('player1');
   const p2 = interaction.options.getUser('player2');
   const score = interaction.options.getString('score');
@@ -27,7 +36,6 @@ client.on('interactionCreate', async (interaction) => {
 
   const id = crypto.randomUUID();
 
-  // 1. zapis do pamięci (pending)
   pendingMatches.set(id, {
     id,
     p1Id: p1.id,
@@ -42,7 +50,6 @@ client.on('interactionCreate', async (interaction) => {
     p2Accepted: autoAccept,
   });
 
-  // 2. AUTO MODE → od razu kończymy
   if (autoAccept) {
     await interaction.reply(
       `DEV MODE: Match zapisany automatycznie ${p1.username} vs ${p2.username} | ${score} | ${map}`
@@ -52,7 +59,6 @@ client.on('interactionCreate', async (interaction) => {
     return;
   }
 
-  // 3. buttony (tylko normal mode)
   const rowP1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(`accept_${id}_${p1.id}`)
@@ -67,25 +73,64 @@ client.on('interactionCreate', async (interaction) => {
       .setStyle(ButtonStyle.Success)
   );
 
-  // 4. DM do graczy
+  let dmErrors: string[] = [];
+
   try {
-    await p1.send({
+    const member1 = await guild.members.fetch(p1.id);
+    await member1.send({
       content: `Czy akceptujesz wynik ${score} na mapie ${map}?`,
       components: [rowP1],
     });
+  } catch (e) {
+    dmErrors.push(p1.username);
+    console.log('Cannot send DM to player1:', e);
+  }
 
-    await p2.send({
+  try {
+    const member2 = await guild.members.fetch(p2.id);
+    await member2.send({
       content: `Czy akceptujesz wynik ${score} na mapie ${map}?`,
       components: [rowP2],
     });
   } catch (e) {
-    console.log('Nie mogę wysłać DM: ' + e);
+    dmErrors.push(p2.username);
+    console.log('Cannot send DM to player2:', e);
   }
 
-  // 5. timeout 5 min (tylko normal mode)
+  const resolveMember = async (id: string) => {
+    try {
+      const m = await guild.members.fetch(id);
+      console.log(`Member ${id}: OK`);
+      return m;
+    } catch {
+      console.log(`Member ${id}: FAIL`);
+      return null;
+    }
+  };
+
+  const member1 = await resolveMember(p1.id);
+  const member2 = await resolveMember(p2.id);
+
+  if (!member1 || !member2) {
+    await interaction.reply({
+      content:
+        'Nie mogę znaleźć graczy na serwerze (cache / permissions issue).',
+      ephemeral: true,
+    });
+    return;
+  }
+
   scheduleMatchExpiry(id);
 
-  await interaction.reply(
-    `Match pending: ${p1.username} vs ${p2.username} | ${score} | ${map}`
-  );
+  if (dmErrors.length > 0) {
+    await interaction.reply(
+      `Mecz nie został zapisany, nie udało się wysłać DM do: ${dmErrors.join(
+        ', '
+      )}`
+    );
+  } else {
+    await interaction.reply(
+      `Mecz czekający na akceptację: ${p1.username} vs ${p2.username} | ${score} | ${map}`
+    );
+  }
 });
