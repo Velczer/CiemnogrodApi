@@ -79,7 +79,7 @@ client.on('interactionCreate', async (interaction) => {
       components: [rowP2],
     });
   } catch (e) {
-    console.log('Nie mogę wysłać DM');
+    console.log('Nie mogę wysłać DM: ' + e);
   }
 
   // 5. timeout 5 min (tylko normal mode)
