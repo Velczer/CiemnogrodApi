@@ -4,21 +4,29 @@ import { heroesCommand } from './commands/heroes';
 
 dotenv.config();
 
+const TOKEN = process.env.DISCORD_TOKEN;
+const CLIENT_ID = process.env.CLIENT_ID;
+
+if (!TOKEN) throw new Error('Brak DISCORD_TOKEN');
+if (!CLIENT_ID) throw new Error('Brak CLIENT_ID');
+
+const token: string = TOKEN;
+const clientId: string = CLIENT_ID;
+
 const commands = [heroesCommand.toJSON()];
 
-const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN!);
+const rest = new REST({ version: '10' }).setToken(token);
 
 async function registerCommands() {
   try {
     console.log('Rejestruję komendy...');
 
-    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID!), {
-      body: commands,
-    });
+    // PROD: global (może trwać do 1h)
+    await rest.put(Routes.applicationCommands(clientId), { body: commands });
 
-    console.log('Komendy zarejestrowane!');
+    console.log('Komendy zarejestrowane (GLOBAL)!');
   } catch (error) {
-    console.error(error);
+    console.error('Błąd rejestracji komend:', error);
   }
 }
 

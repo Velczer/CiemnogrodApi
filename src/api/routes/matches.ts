@@ -5,9 +5,17 @@ const router = Router();
 
 router.post('/', async (req, res) => {
   try {
-    const { player1DiscordId, player2DiscordId, score, map } = req.body;
-
-    const [score1, score2] = score.split(':').map(Number);
+    const {
+      player1DiscordId,
+      player2DiscordId,
+      player1Name,
+      player2Name,
+      faction1,
+      faction2,
+      score1,
+      score2,
+      map,
+    } = req.body;
 
     // znajdź lub stwórz graczy
     const p1 = await prisma.player.upsert({
@@ -15,7 +23,7 @@ router.post('/', async (req, res) => {
       update: {},
       create: {
         discordId: player1DiscordId,
-        nickname: 'Player1',
+        nickname: player1Name,
       },
     });
 
@@ -24,7 +32,7 @@ router.post('/', async (req, res) => {
       update: {},
       create: {
         discordId: player2DiscordId,
-        nickname: 'Player2',
+        nickname: player2Name,
       },
     });
 
@@ -34,6 +42,8 @@ router.post('/', async (req, res) => {
       data: {
         player1Id: p1.id,
         player2Id: p2.id,
+        faction1,
+        faction2,
         score1,
         score2,
         map,
@@ -61,6 +71,41 @@ router.post('/', async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'match create failed' });
+  }
+});
+
+router.get('/', async (req, res) => {
+  try {
+    const rawPlayerId = req.query.playerId;
+    const limit = req.query.limit;
+
+    const playerId = typeof rawPlayerId === 'string' ? rawPlayerId : undefined;
+
+    const where = playerId
+      ? {
+          OR: [
+            { player1: { discordId: playerId } },
+            { player2: { discordId: playerId } },
+          ],
+        }
+      : {};
+
+    const matches = await prisma.match.findMany({
+      where,
+      orderBy: {
+        id: 'desc',
+      },
+      take: limit ? Number(limit) : 50,
+      include: {
+        player1: true,
+        player2: true,
+      },
+    });
+
+    res.json(matches);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'failed to fetch matches' });
   }
 });
 

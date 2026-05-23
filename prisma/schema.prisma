@@ -24,6 +24,9 @@ model Match {
   player1Id  Int
   player2Id  Int
 
+  faction1   String
+  faction2   String
+
   player1    Player   @relation("Player1", fields: [player1Id], references: [id])
   player2    Player   @relation("Player2", fields: [player2Id], references: [id])
 
