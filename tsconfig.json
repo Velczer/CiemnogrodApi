@@ -44,7 +44,9 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    // due to old PRISMA 6.0.0 version
+    "ignoreDeprecations": "6.0"
   },
   // Limit the included files to the source folder so rootDir contains all included sources.
   "include": ["src/**/*"]
