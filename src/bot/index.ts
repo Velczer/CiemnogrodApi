@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
-import { client } from './client';
-import './interactions/buttons';
-import './commands/heroesHandler';
+import { client } from './client.js';
+import './interactions/buttons.js';
+import './commands/heroesHandler.js';
 
 dotenv.config();
 

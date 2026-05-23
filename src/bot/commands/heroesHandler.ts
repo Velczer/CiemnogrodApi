@@ -1,8 +1,11 @@
-import { client } from '../client';
+import { client } from '../client.js';
 import crypto from 'crypto';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { pendingMatches, scheduleMatchExpiry } from '../services/matchService';
-import { tryFinalizeMatch } from '../services/matchService';
+import {
+  pendingMatches,
+  scheduleMatchExpiry,
+} from '../services/matchService.js';
+import { tryFinalizeMatch } from '../services/matchService.js';
 
 const autoAccept = process.env.AUTO_ACCEPT_MATCHES === 'true';
 

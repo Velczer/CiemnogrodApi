@@ -1,8 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import matchesRouter from './routes/matches';
-import players from './routes/players';
-import { apiKeyMiddleware } from './middleware/apiKey';
+import matchesRouter from './routes/matches.js';
+import players from './routes/players.js';
+import { apiKeyMiddleware } from './middleware/apiKey.js';
 
 const app = express();
 

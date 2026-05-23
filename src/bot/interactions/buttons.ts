@@ -1,5 +1,5 @@
-import { client } from '../client';
-import { acceptMatch, tryFinalizeMatch } from '../services/matchService';
+import { client } from '../client.js';
+import { acceptMatch, tryFinalizeMatch } from '../services/matchService.js';
 
 /**
  * BUTTON INTERACTIONS (Accept / Reject future-proof)

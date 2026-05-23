@@ -1,6 +1,6 @@
 import { REST, Routes } from 'discord.js';
 import dotenv from 'dotenv';
-import { heroesCommand } from './commands/heroes';
+import { heroesCommand } from './commands/heroes.js';
 
 dotenv.config();
 

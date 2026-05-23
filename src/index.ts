@@ -1,6 +1,6 @@
-import dotenv from "dotenv";
-import app from "./api";
-import { startBot } from "./bot";
+import dotenv from 'dotenv';
+import app from './api/index.js';
+import { startBot } from './bot/index.js';
 
 dotenv.config();
 

@@ -7,13 +7,13 @@
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "baseUrl": "./src",
     "outDir": "dist",
     "rootDir": "src",
     "target": "ES2022",
-    "verbatimModuleSyntax": false,
+    "verbatimModuleSyntax": true,
     "types": [],
     // For nodejs:
     // "lib": ["esnext"],
