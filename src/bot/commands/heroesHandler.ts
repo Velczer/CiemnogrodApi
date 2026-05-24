@@ -52,7 +52,7 @@ client.on('interactionCreate', async (interaction) => {
 
   if (autoAccept) {
     await interaction.reply(
-      `DEV MODE: Match zapisany automatycznie ${p1.username} vs ${p2.username} | ${score} | ${map}`
+      `DEV MODE: Mecz zapisany automatycznie ${p1.username} vs ${p2.username} | ${score} | ${map}`
     );
 
     await tryFinalizeMatch(id);
@@ -95,29 +95,6 @@ client.on('interactionCreate', async (interaction) => {
   } catch (e) {
     dmErrors.push(p2.username);
     console.log('Cannot send DM to player2:', e);
-  }
-
-  const resolveMember = async (id: string) => {
-    try {
-      const m = await guild.members.fetch(id);
-      console.log(`Member ${id}: OK`);
-      return m;
-    } catch {
-      console.log(`Member ${id}: FAIL`);
-      return null;
-    }
-  };
-
-  const member1 = await resolveMember(p1.id);
-  const member2 = await resolveMember(p2.id);
-
-  if (!member1 || !member2) {
-    await interaction.reply({
-      content:
-        'Nie mogę znaleźć graczy na serwerze (cache / permissions issue).',
-      ephemeral: true,
-    });
-    return;
   }
 
   scheduleMatchExpiry(id);
