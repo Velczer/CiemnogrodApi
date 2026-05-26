@@ -19,9 +19,17 @@ client.on('interactionCreate', async (interaction) => {
 
     const result = await submitTournamentMatchResult(matchNumber, score);
 
-    if (result.tournamentCompleted) {
+    if (result.tournamentCompleted && result.loser) {
       await interaction.editReply(
-        `🏆 Turniej zakończony!\nZwycięzca: ${result.winner.name}`
+        `🏆 Turniej zakończony!\nZwycięzca: ${result.winner.name}\n🥈 Drugie miejsce zajmuje: ${result.loser.name}`
+      );
+
+      return;
+    }
+
+    if (result.round === 'ThirdPlace') {
+      await interaction.editReply(
+        `🥉 Walka o trzecie miejsce zakończona!\nTrzecie miejsce zdobywa: ${result.winner.name}`
       );
 
       return;

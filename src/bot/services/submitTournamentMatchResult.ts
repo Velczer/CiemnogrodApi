@@ -1,16 +1,122 @@
 import { prisma } from '../../lib/prisma.js';
 
+type TournamentPlayer = {
+  id: string;
+  name: string | null;
+};
+
+function parseScore(score: string) {
+  const [score1, score2] = score.split(':').map(Number);
+
+  if (
+    score1 === undefined ||
+    score2 === undefined ||
+    Number.isNaN(score1) ||
+    Number.isNaN(score2) ||
+    score1 === score2
+  ) {
+    throw new Error('Nieprawidłowy wynik');
+  }
+
+  return { score1, score2 };
+}
+
+function getWinnerAndLoser({
+  score1,
+  score2,
+  player1,
+  player2,
+}: {
+  score1: number;
+  score2: number;
+  player1: TournamentPlayer;
+  player2: TournamentPlayer;
+}) {
+  return score1 > score2
+    ? { winner: player1, loser: player2 }
+    : { winner: player2, loser: player1 };
+}
+
+async function activateMatchIfReady(matchId: number) {
+  const match = await prisma.tournamentMatch.findUnique({
+    where: { id: matchId },
+  });
+
+  if (!match?.player1Id || !match.player2Id) return;
+
+  await prisma.tournamentMatch.update({
+    where: { id: matchId },
+    data: { status: 'live' },
+  });
+}
+
+async function movePlayerToMatchSlot({
+  tournamentId,
+  matchNumber,
+  slot,
+  player,
+  errorMessage,
+}: {
+  tournamentId: number;
+  matchNumber: number | null;
+  slot: number | null;
+  player: TournamentPlayer;
+  errorMessage: string;
+}) {
+  if (!matchNumber || !slot) return;
+
+  const targetMatch = await prisma.tournamentMatch.findFirst({
+    where: {
+      tournamentId,
+      matchNumber,
+    },
+  });
+
+  if (!targetMatch) {
+    throw new Error(errorMessage);
+  }
+
+  await prisma.tournamentMatch.update({
+    where: { id: targetMatch.id },
+    data:
+      slot === 1
+        ? {
+            player1Id: player.id,
+            player1Name: player.name,
+          }
+        : {
+            player2Id: player.id,
+            player2Name: player.name,
+          },
+  });
+
+  await activateMatchIfReady(targetMatch.id);
+}
+
+async function incrementTournamentWins(discordId: string) {
+  const player = await prisma.player.findUnique({
+    where: { discordId },
+  });
+
+  if (!player) return;
+
+  await prisma.player.update({
+    where: { id: player.id },
+    data: {
+      tournamentWins: {
+        increment: 1,
+      },
+    },
+  });
+}
+
 export async function submitTournamentMatchResult(
   matchNumber: number,
   score: string
 ) {
   const tournament = await prisma.tournament.findFirst({
-    where: {
-      status: 'active',
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
+    where: { status: 'active' },
+    orderBy: { createdAt: 'desc' },
   });
 
   if (!tournament) {
@@ -36,47 +142,23 @@ export async function submitTournamentMatchResult(
     throw new Error('Mecz został już rozegrany');
   }
 
-  const parsed = score.split(':').map(Number);
+  const { score1, score2 } = parseScore(score);
 
-  const score1 = parsed[0];
-  const score2 = parsed[1];
-
-  if (
-    score1 === undefined ||
-    score2 === undefined ||
-    Number.isNaN(score1) ||
-    Number.isNaN(score2) ||
-    score1 === score2
-  ) {
-    throw new Error('Nieprawidłowy wynik');
-  }
-
-  const winner =
-    score1 > score2
-      ? {
-          id: match.player1Id,
-          name: match.player1Name,
-        }
-      : {
-          id: match.player2Id,
-          name: match.player2Name,
-        };
-
-  const loser =
-    score1 > score2
-      ? {
-          id: match.player2Id,
-          name: match.player2Name,
-        }
-      : {
-          id: match.player1Id,
-          name: match.player1Name,
-        };
+  const { winner, loser } = getWinnerAndLoser({
+    score1,
+    score2,
+    player1: {
+      id: match.player1Id,
+      name: match.player1Name,
+    },
+    player2: {
+      id: match.player2Id,
+      name: match.player2Name,
+    },
+  });
 
   await prisma.tournamentMatch.update({
-    where: {
-      id: match.id,
-    },
+    where: { id: match.id },
     data: {
       score1,
       score2,
@@ -86,134 +168,36 @@ export async function submitTournamentMatchResult(
     },
   });
 
-  // WRZUĆ ZWYCIĘZCĘ DO NASTĘPNEGO MECZU
-  if (match.nextMatchNumber && match.nextSlot) {
-    const nextMatch = await prisma.tournamentMatch.findFirst({
-      where: {
-        tournamentId: tournament.id,
-        matchNumber: match.nextMatchNumber,
-      },
-    });
+  await movePlayerToMatchSlot({
+    tournamentId: tournament.id,
+    matchNumber: match.nextMatchNumber,
+    slot: match.nextSlot,
+    player: winner,
+    errorMessage: 'Nie znaleziono następnego meczu',
+  });
 
-    if (!nextMatch) {
-      throw new Error('Nie znaleziono następnego meczu');
-    }
+  await movePlayerToMatchSlot({
+    tournamentId: tournament.id,
+    matchNumber: match.loserNextMatchNumber,
+    slot: match.loserNextSlot,
+    player: loser,
+    errorMessage: 'Nie znaleziono meczu o 3 miejsce',
+  });
 
-    await prisma.tournamentMatch.update({
-      where: {
-        id: nextMatch.id,
-      },
-      data:
-        match.nextSlot === 1
-          ? {
-              player1Id: winner.id,
-              player1Name: winner.name,
-            }
-          : {
-              player2Id: winner.id,
-              player2Name: winner.name,
-            },
-    });
-
-    const updatedNextMatch = await prisma.tournamentMatch.findFirst({
-      where: {
-        id: nextMatch.id,
-      },
-    });
-
-    if (updatedNextMatch?.player1Id && updatedNextMatch?.player2Id) {
-      await prisma.tournamentMatch.update({
-        where: {
-          id: nextMatch.id,
-        },
-        data: {
-          status: 'live',
-        },
-      });
-    }
-  }
-
-  // WRZUĆ PRZEGRANEGO DO WALKI O 3 MIEJSCE
-  if (match.loserNextMatchNumber && match.loserNextSlot) {
-    const loserNextMatch = await prisma.tournamentMatch.findFirst({
-      where: {
-        tournamentId: tournament.id,
-        matchNumber: match.loserNextMatchNumber,
-      },
-    });
-
-    if (!loserNextMatch) {
-      throw new Error('Nie znaleziono meczu o 3 miejsce');
-    }
-
-    await prisma.tournamentMatch.update({
-      where: {
-        id: loserNextMatch.id,
-      },
-      data:
-        match.loserNextSlot === 1
-          ? {
-              player1Id: loser.id,
-              player1Name: loser.name,
-            }
-          : {
-              player2Id: loser.id,
-              player2Name: loser.name,
-            },
-    });
-
-    const updatedLoserMatch = await prisma.tournamentMatch.findFirst({
-      where: {
-        id: loserNextMatch.id,
-      },
-    });
-
-    if (updatedLoserMatch?.player1Id && updatedLoserMatch?.player2Id) {
-      await prisma.tournamentMatch.update({
-        where: {
-          id: loserNextMatch.id,
-        },
-        data: {
-          status: 'live',
-        },
-      });
-    }
-  }
-
-  // KONIEC TURNIEJU
   if (match.round === 'Final' && !match.nextMatchNumber) {
-    const winnerPlayer = await prisma.player.findUnique({
-      where: {
-        discordId: winner.id,
-      },
-    });
-
-    if (winnerPlayer) {
-      await prisma.player.update({
-        where: {
-          id: winnerPlayer.id,
-        },
-        data: {
-          tournamentWins: {
-            increment: 1,
-          },
-        },
-      });
-    }
+    await incrementTournamentWins(winner.id);
 
     await prisma.tournament.update({
-      where: {
-        id: tournament.id,
-      },
-      data: {
-        status: 'completed',
-      },
+      where: { id: tournament.id },
+      data: { status: 'completed' },
     });
 
     return {
       winner,
+      loser,
       tournamentCompleted: true,
       nextMatchNumber: null,
+      round: match.round,
     };
   }
 
@@ -221,5 +205,6 @@ export async function submitTournamentMatchResult(
     winner,
     tournamentCompleted: false,
     nextMatchNumber: match.nextMatchNumber,
+    round: match.round,
   };
 }
