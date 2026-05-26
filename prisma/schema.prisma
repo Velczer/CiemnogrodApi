@@ -70,6 +70,9 @@ model TournamentMatch {
   winnerId   String?
   winnerName String?
 
+  loserNextMatchNumber Int?
+  loserNextSlot        Int?
+
   status String @default("upcoming")
 
   nextMatchNumber Int?

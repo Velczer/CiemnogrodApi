@@ -15,6 +15,9 @@ export type GeneratedMatch = {
   nextMatchNumber: number | null;
   nextSlot: 1 | 2 | null;
 
+  loserNextMatchNumber: number | null;
+  loserNextSlot: 1 | 2 | null;
+
   status: 'upcoming' | 'live' | 'completed';
 
   winner: TournamentPlayer | null;

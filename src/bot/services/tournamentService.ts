@@ -4,18 +4,6 @@ function shuffle<T>(items: T[]) {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
-function nextPowerOfTwo(value: number) {
-  return 2 ** Math.ceil(Math.log2(value));
-}
-
-function getRoundName(roundOrder: number, totalRounds: number) {
-  if (roundOrder === totalRounds) return 'Final';
-  if (roundOrder === totalRounds - 1) return 'Semifinals';
-  if (roundOrder === totalRounds - 2) return 'Quarterfinals';
-
-  return `Runda ${roundOrder}`;
-}
-
 export function generateBracket(players: TournamentPlayer[]) {
   if (players.length < 2) {
     throw new Error('Turniej wymaga minimum 2 graczy');
@@ -26,141 +14,163 @@ export function generateBracket(players: TournamentPlayer[]) {
   }
 
   const shuffled = shuffle(players);
-  const bracketSize = nextPowerOfTwo(shuffled.length);
-  const totalRounds = Math.log2(bracketSize);
-
-  const slots: Array<TournamentPlayer | null> = [
-    ...shuffled,
-    ...Array(bracketSize - shuffled.length).fill(null),
-  ];
-
   const matches: GeneratedMatch[] = [];
+
   let matchNumber = 1;
 
-  let previousRoundMatchNumbers: number[] = [];
-
-  for (let i = 0; i < bracketSize; i += 2) {
-    const player1 = slots[i] ?? null;
-    const player2 = slots[i + 1] ?? null;
-
-    // SKIP EMPTY MATCH
-    if (!player1 && !player2) {
-      continue;
-    }
-
-    const hasBye = !player1 || !player2;
-
-    const winner = hasBye ? player1 ?? player2 : null;
-
-    const match: GeneratedMatch = {
-      matchNumber,
-      round: getRoundName(1, totalRounds),
+  if (shuffled.length === 2) {
+    matches.push({
+      matchNumber: matchNumber++,
+      round: 'Final',
       roundOrder: 1,
-      matchOrder: previousRoundMatchNumbers.length + 1,
+      matchOrder: 1,
+      player1: shuffled[0] ?? null,
+      player2: shuffled[1] ?? null,
+      nextMatchNumber: null,
+      nextSlot: null,
+      loserNextMatchNumber: null,
+      loserNextSlot: null,
+      status: 'live',
+      winner: null,
+    });
+
+    return matches;
+  }
+
+  const preliminaryMatchesCount = shuffled.length > 4 ? shuffled.length - 4 : 0;
+
+  const semifinalPlayers: Array<TournamentPlayer | null> = [];
+  const preliminaryMatchNumbers: number[] = [];
+
+  for (let i = 0; i < preliminaryMatchesCount; i++) {
+    const player1 = shuffled[i * 2] ?? null;
+    const player2 = shuffled[i * 2 + 1] ?? null;
+
+    matches.push({
+      matchNumber,
+      round: 'Quarterfinals',
+      roundOrder: 1,
+      matchOrder: i + 1,
       player1,
       player2,
       nextMatchNumber: null,
       nextSlot: null,
-      status: hasBye ? 'completed' : 'live',
-      winner,
-    };
+      loserNextMatchNumber: null,
+      loserNextSlot: null,
+      status: 'live',
+      winner: null,
+    });
 
-    matches.push(match);
-
-    previousRoundMatchNumbers.push(matchNumber);
-
+    preliminaryMatchNumbers.push(matchNumber);
+    semifinalPlayers.push(null);
     matchNumber++;
   }
 
-  for (let roundOrder = 2; roundOrder <= totalRounds; roundOrder++) {
-    const currentRoundMatchNumbers: number[] = [];
+  const remainingPlayers = shuffled.slice(preliminaryMatchesCount * 2);
 
-    for (let i = 0; i < previousRoundMatchNumbers.length; i += 2) {
-      const currentMatchNumber = matchNumber++;
+  semifinalPlayers.push(...remainingPlayers);
 
-      const match: GeneratedMatch = {
-        matchNumber: currentMatchNumber,
-        round: getRoundName(roundOrder, totalRounds),
-        roundOrder,
-        matchOrder: currentRoundMatchNumbers.length + 1,
-        player1: null,
-        player2: null,
-        nextMatchNumber: null,
-        nextSlot: null,
-        status: 'upcoming',
-        winner: null,
-      };
-
-      matches.push(match);
-      currentRoundMatchNumbers.push(currentMatchNumber);
-
-      const prev1 = matches.find(
-        (item) => item.matchNumber === previousRoundMatchNumbers[i]
-      );
-      const prev2 = matches.find(
-        (item) => item.matchNumber === previousRoundMatchNumbers[i + 1]
-      );
-
-      if (prev1) {
-        prev1.nextMatchNumber = currentMatchNumber;
-        prev1.nextSlot = 1;
-      }
-
-      if (prev2) {
-        prev2.nextMatchNumber = currentMatchNumber;
-        prev2.nextSlot = 2;
-      }
-    }
-
-    previousRoundMatchNumbers = currentRoundMatchNumbers;
+  while (semifinalPlayers.length < 4) {
+    semifinalPlayers.push(null);
   }
 
-  autoAdvanceByes(matches);
+  const semifinalRoundOrder = preliminaryMatchesCount > 0 ? 2 : 1;
+  const finalRoundOrder = semifinalRoundOrder + 1;
+
+  const semifinal1Number = matchNumber++;
+  const semifinal2Number = matchNumber++;
+  const finalNumber = matchNumber++;
+  const thirdPlaceNumber = matchNumber++;
+
+  matches.push({
+    matchNumber: semifinal1Number,
+    round: 'Semifinals',
+    roundOrder: semifinalRoundOrder,
+    matchOrder: 1,
+    player1:
+      preliminaryMatchNumbers[0] !== undefined
+        ? null
+        : semifinalPlayers[0] ?? null,
+    player2:
+      semifinalPlayers[
+        preliminaryMatchesCount > 0 ? preliminaryMatchesCount : 1
+      ] ?? null,
+    nextMatchNumber: finalNumber,
+    nextSlot: 1,
+    loserNextMatchNumber: thirdPlaceNumber,
+    loserNextSlot: 1,
+    status: 'upcoming',
+    winner: null,
+  });
+
+  matches.push({
+    matchNumber: semifinal2Number,
+    round: 'Semifinals',
+    roundOrder: semifinalRoundOrder,
+    matchOrder: 2,
+    player1:
+      preliminaryMatchNumbers[1] !== undefined
+        ? null
+        : semifinalPlayers[2] ?? null,
+    player2:
+      semifinalPlayers[
+        preliminaryMatchesCount > 0 ? preliminaryMatchesCount + 1 : 3
+      ] ?? null,
+    nextMatchNumber: finalNumber,
+    nextSlot: 2,
+    loserNextMatchNumber: thirdPlaceNumber,
+    loserNextSlot: 2,
+    status: 'upcoming',
+    winner: null,
+  });
+
+  matches.push({
+    matchNumber: finalNumber,
+    round: 'Final',
+    roundOrder: finalRoundOrder,
+    matchOrder: 1,
+    player1: null,
+    player2: null,
+    nextMatchNumber: null,
+    nextSlot: null,
+    loserNextMatchNumber: null,
+    loserNextSlot: null,
+    status: 'upcoming',
+    winner: null,
+  });
+
+  matches.push({
+    matchNumber: thirdPlaceNumber,
+    round: 'ThirdPlace',
+    roundOrder: finalRoundOrder,
+    matchOrder: 2,
+    player1: null,
+    player2: null,
+    nextMatchNumber: null,
+    nextSlot: null,
+    loserNextMatchNumber: null,
+    loserNextSlot: null,
+    status: 'upcoming',
+    winner: null,
+  });
+
+  preliminaryMatchNumbers.forEach((preliminaryMatchNumber, index) => {
+    const match = matches.find(
+      (item) => item.matchNumber === preliminaryMatchNumber
+    );
+    if (!match) return;
+
+    match.nextMatchNumber = index === 0 ? semifinal1Number : semifinal2Number;
+    match.nextSlot = 1;
+  });
+
+  for (const match of matches) {
+    const hasBothPlayers = match.player1 && match.player2;
+
+    if (hasBothPlayers && match.status !== 'completed') {
+      match.status = 'live';
+    }
+  }
 
   return matches;
-}
-
-function autoAdvanceByes(matches: GeneratedMatch[]) {
-  let changed = true;
-
-  while (changed) {
-    changed = false;
-
-    for (const match of matches) {
-      if (!match.winner || !match.nextMatchNumber || !match.nextSlot) continue;
-
-      const nextMatch = matches.find(
-        (item) => item.matchNumber === match.nextMatchNumber
-      );
-
-      if (!nextMatch) continue;
-
-      if (match.nextSlot === 1 && !nextMatch.player1) {
-        nextMatch.player1 = match.winner;
-        changed = true;
-      }
-
-      if (match.nextSlot === 2 && !nextMatch.player2) {
-        nextMatch.player2 = match.winner;
-        changed = true;
-      }
-
-      if (
-        nextMatch.player1 &&
-        nextMatch.player2 &&
-        nextMatch.status !== 'completed'
-      ) {
-        nextMatch.status = 'live';
-      }
-
-      const hasBye =
-        (nextMatch.player1 && !nextMatch.player2) ||
-        (!nextMatch.player1 && nextMatch.player2);
-
-      if (hasBye && nextMatch.status !== 'completed') {
-        nextMatch.winner = nextMatch.player1 ?? nextMatch.player2;
-        nextMatch.status = 'completed';
-      }
-    }
-  }
 }
