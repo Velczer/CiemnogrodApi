@@ -59,9 +59,7 @@ client.on('interactionCreate', async (interaction) => {
     await prisma.tournamentMatch.createMany({
       data: bracket.map((match) => ({
         tournamentId: tournament.id,
-
         matchNumber: match.matchNumber,
-
         round: match.round,
         roundOrder: match.roundOrder,
         matchOrder: match.matchOrder,
@@ -79,6 +77,9 @@ client.on('interactionCreate', async (interaction) => {
 
         nextMatchNumber: match.nextMatchNumber,
         nextSlot: match.nextSlot,
+
+        loserNextMatchNumber: match.loserNextMatchNumber,
+        loserNextSlot: match.loserNextSlot,
       })),
     });
 
