@@ -43,7 +43,13 @@ export function generateBracket(players: TournamentPlayer[]) {
     const player1 = slots[i] ?? null;
     const player2 = slots[i + 1] ?? null;
 
+    // SKIP EMPTY MATCH
+    if (!player1 && !player2) {
+      continue;
+    }
+
     const hasBye = !player1 || !player2;
+
     const winner = hasBye ? player1 ?? player2 : null;
 
     const match: GeneratedMatch = {
@@ -60,7 +66,9 @@ export function generateBracket(players: TournamentPlayer[]) {
     };
 
     matches.push(match);
+
     previousRoundMatchNumbers.push(matchNumber);
+
     matchNumber++;
   }
 
