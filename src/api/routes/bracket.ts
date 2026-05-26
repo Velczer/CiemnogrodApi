@@ -5,14 +5,23 @@ const router = Router();
 
 router.get('/', async (_req, res) => {
   try {
-    const tournament = await prisma.tournament.findFirst({
-      where: {
-        status: 'active',
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const tournament =
+      (await prisma.tournament.findFirst({
+        where: {
+          status: 'active',
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      })) ??
+      (await prisma.tournament.findFirst({
+        where: {
+          status: 'completed',
+        },
+        orderBy: {
+          updatedAt: 'desc',
+        },
+      }));
 
     if (!tournament) {
       return res.json([]);
