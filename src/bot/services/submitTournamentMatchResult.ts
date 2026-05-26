@@ -216,4 +216,10 @@ export async function submitTournamentMatchResult(
       nextMatchNumber: null,
     };
   }
+
+  return {
+    winner,
+    tournamentCompleted: false,
+    nextMatchNumber: match.nextMatchNumber,
+  };
 }

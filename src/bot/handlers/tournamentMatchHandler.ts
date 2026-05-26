@@ -19,11 +19,6 @@ client.on('interactionCreate', async (interaction) => {
 
     const result = await submitTournamentMatchResult(matchNumber, score);
 
-    if (!result) {
-      await interaction.editReply('Nie udało się zapisać wyniku');
-      return;
-    }
-
     if (result.tournamentCompleted) {
       await interaction.editReply(
         `🏆 Turniej zakończony!\nZwycięzca: ${result.winner.name}`
