@@ -4,6 +4,7 @@ import matchesRouter from './routes/matches.js';
 import players from './routes/players.js';
 import statsRouter from './routes/stats.js';
 import { apiKeyMiddleware } from './middleware/apiKey.js';
+import bracketRouter from './routes/bracket.js';
 
 const app = express();
 
@@ -13,5 +14,6 @@ app.use(express.json());
 app.use('/api/matches', apiKeyMiddleware, matchesRouter);
 app.use('/api/players', apiKeyMiddleware, players);
 app.use('/api/stats', apiKeyMiddleware, statsRouter);
+app.use('/api/bracket', apiKeyMiddleware, bracketRouter);
 
 export default app;

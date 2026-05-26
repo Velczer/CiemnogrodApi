@@ -8,32 +8,77 @@ datasource db {
 }
 
 model Player {
-  id         Int      @id @default(autoincrement())
-  discordId  String   @unique
-  nickname   String
-  wins       Int      @default(0)
-  losses     Int      @default(0)
+  id        Int    @id @default(autoincrement())
+  discordId String @unique
+  nickname  String
+  wins      Int    @default(0)
+  losses    Int    @default(0)
 
   matches1 Match[] @relation("Player1")
   matches2 Match[] @relation("Player2")
 }
 
 model Match {
-  id         Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  player1Id  Int
-  player2Id  Int
+  player1Id Int
+  player2Id Int
 
-  faction1   String
-  faction2   String
+  faction1 String
+  faction2 String
 
-  player1    Player   @relation("Player1", fields: [player1Id], references: [id])
-  player2    Player   @relation("Player2", fields: [player2Id], references: [id])
+  player1 Player @relation("Player1", fields: [player1Id], references: [id])
+  player2 Player @relation("Player2", fields: [player2Id], references: [id])
 
-  score1     Int
-  score2     Int
+  score1 Int
+  score2 Int
 
-  map        String
+  map String
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
+model Tournament {
+  id     Int    @id @default(autoincrement())
+  name   String
+  season String @default("I")
+  status String @default("active")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  matches TournamentMatch[]
+}
+
+model TournamentMatch {
+  id           Int @id @default(autoincrement())
+  tournamentId Int
+
+  matchNumber Int
+  round       String
+  roundOrder  Int
+  matchOrder  Int
+
+  player1Id   String?
+  player1Name String?
+  player2Id   String?
+  player2Name String?
+
+  score1 Int?
+  score2 Int?
+
+  winnerId   String?
+  winnerName String?
+
+  status String @default("upcoming")
+
+  nextMatchNumber Int?
+  nextSlot        Int?
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tournamentId, matchNumber])
 }
