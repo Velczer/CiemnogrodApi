@@ -190,6 +190,25 @@ export async function submitTournamentMatchResult(
     });
 
     if (!thirdPlaceMatch || thirdPlaceMatch.status === 'completed') {
+      const winnerPlayer = await prisma.player.findUnique({
+        where: {
+          discordId: winner.id,
+        },
+      });
+
+      if (winnerPlayer) {
+        await prisma.player.update({
+          where: {
+            id: winnerPlayer.id,
+          },
+          data: {
+            tournamentWins: {
+              increment: 1,
+            },
+          },
+        });
+      }
+
       await prisma.tournament.update({
         where: { id: tournament.id },
         data: { status: 'completed' },
