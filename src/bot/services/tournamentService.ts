@@ -9,9 +9,9 @@ function nextPowerOfTwo(value: number) {
 }
 
 function getRoundName(roundOrder: number, totalRounds: number) {
-  if (roundOrder === totalRounds) return 'Finał';
-  if (roundOrder === totalRounds - 1) return 'Półfinały';
-  if (roundOrder === totalRounds - 2) return 'Ćwierćfinały';
+  if (roundOrder === totalRounds) return 'Final';
+  if (roundOrder === totalRounds - 1) return 'Semifinals';
+  if (roundOrder === totalRounds - 2) return 'Quarterfinals';
 
   return `Runda ${roundOrder}`;
 }

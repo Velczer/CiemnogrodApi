@@ -3,6 +3,7 @@ import { client } from './client.js';
 import './interactions/buttons.js';
 import './handlers/heroesHandler.js';
 import './handlers/startTournamentHandler.js';
+import './handlers/tournamentMatchHandler.js';
 
 dotenv.config();
 

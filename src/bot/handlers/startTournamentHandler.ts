@@ -7,6 +7,17 @@ client.on('interactionCreate', async (interaction) => {
 
   if (interaction.commandName !== 'starttournament') return;
 
+  const activeTournament = await prisma.tournament.findFirst({
+    where: { status: 'active' },
+  });
+
+  if (activeTournament) {
+    await interaction.editReply(
+      'Istnieje już aktywny turniej. Zakończ go albo usuń przed utworzeniem nowego.'
+    );
+    return;
+  }
+
   try {
     const players = Array.from({ length: 8 }, (_, i) => {
       const user = interaction.options.getUser(`player${i + 1}`);

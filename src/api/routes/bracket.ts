@@ -5,7 +5,23 @@ const router = Router();
 
 router.get('/', async (_req, res) => {
   try {
+    const tournament = await prisma.tournament.findFirst({
+      where: {
+        status: 'active',
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    if (!tournament) {
+      return res.json([]);
+    }
+
     const matches = await prisma.tournamentMatch.findMany({
+      where: {
+        tournamentId: tournament.id,
+      },
       orderBy: [{ roundOrder: 'asc' }, { matchOrder: 'asc' }],
     });
 

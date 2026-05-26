@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 
 import { heroesCommand } from './commands/heroes.js';
 import { startTournamentCommand } from './commands/startTournament.js';
+import { tournamentMatchCommand } from './commands/tournamentMatch.js';
 
 dotenv.config();
 
@@ -15,7 +16,11 @@ if (!CLIENT_ID) throw new Error('Brak CLIENT_ID');
 const token: string = TOKEN;
 const clientId: string = CLIENT_ID;
 
-const commands = [heroesCommand.toJSON(), startTournamentCommand.toJSON()];
+const commands = [
+  heroesCommand.toJSON(),
+  startTournamentCommand.toJSON(),
+  tournamentMatchCommand.toJSON(),
+];
 
 const rest = new REST({ version: '10' }).setToken(token);
 
