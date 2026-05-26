@@ -203,6 +203,7 @@ export async function submitTournamentMatchResult(
 
   return {
     winner,
+    loser,
     tournamentCompleted: false,
     nextMatchNumber: match.nextMatchNumber,
     round: match.round,

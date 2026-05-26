@@ -1,13 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-
-const factions = [
-  { name: 'Świątynia', value: 'Temple' },
-  { name: 'Nekropolis', value: 'Necropolis' },
-  { name: 'Knieja', value: 'Sylvan' },
-  { name: 'Rój', value: 'Hive' },
-  { name: 'Schisma', value: 'Schisma' },
-  { name: 'Loch', value: 'Dungeon' },
-];
+import { factions } from '../helpers/factions.js';
 
 export const heroesCommand = new SlashCommandBuilder()
   .setName('heroes')
@@ -23,8 +15,11 @@ export const heroesCommand = new SlashCommandBuilder()
       .setDescription('Frakcja gracza 1')
       .setRequired(true);
 
-    factions.forEach((faction) => {
-      opt.addChoices(faction);
+    Object.entries(factions).forEach(([value, name]) => {
+      opt.addChoices({
+        name,
+        value,
+      });
     });
 
     return opt;
@@ -40,8 +35,11 @@ export const heroesCommand = new SlashCommandBuilder()
       .setDescription('Frakcja gracza 2')
       .setRequired(true);
 
-    factions.forEach((faction) => {
-      opt.addChoices(faction);
+    Object.entries(factions).forEach(([value, name]) => {
+      opt.addChoices({
+        name,
+        value,
+      });
     });
 
     return opt;

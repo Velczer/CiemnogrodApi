@@ -18,6 +18,8 @@ model Player {
 
   matches1 Match[] @relation("Player1")
   matches2 Match[] @relation("Player2")
+
+  seasonSnapshots SeasonPlayerSnapshot[]
 }
 
 model Match {
@@ -37,14 +39,19 @@ model Match {
 
   map String
 
+  seasonId Int?
+  season   Season? @relation(fields: [seasonId], references: [id])
+
   createdAt DateTime @default(now())
 }
 
 model Tournament {
   id     Int    @id @default(autoincrement())
   name   String
-  season String @default("I")
   status String @default("active")
+
+  seasonId Int?
+  season   Season? @relation(fields: [seasonId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -86,4 +93,36 @@ model TournamentMatch {
   updatedAt DateTime @updatedAt
 
   @@unique([tournamentId, matchNumber])
+}
+
+model Season {
+  id       Int       @id @default(autoincrement())
+  name     String
+  status   String    @default("active") // active | completed
+  startsAt DateTime  @default(now())
+  endsAt   DateTime?
+
+  matches     Match[]
+  tournaments Tournament[]
+  snapshots   SeasonPlayerSnapshot[]
+}
+
+model SeasonPlayerSnapshot {
+  id       Int @id @default(autoincrement())
+  seasonId Int
+  playerId Int
+
+  rank           Int
+  wins           Int
+  losses         Int
+  points         Int
+  tournamentWins Int
+  mainFaction    String?
+
+  createdAt DateTime @default(now())
+
+  season Season @relation(fields: [seasonId], references: [id])
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@unique([seasonId, playerId])
 }

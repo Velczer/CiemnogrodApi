@@ -1,26 +1,40 @@
 import { Router } from 'express';
 import { prisma } from '../../lib/prisma.js';
+import { getActiveSeason } from '../../services/seasonService.js';
 
 const router = Router();
 
 router.get('/', async (_req, res) => {
   try {
-    const champions = await prisma.player.count();
-    const games = await prisma.match.count();
-    const factions = await prisma.match.groupBy({
-      by: ['faction1'],
-      _count: {
+    const season = await getActiveSeason();
+
+    const seasonMatches = await prisma.match.findMany({
+      where: {
+        seasonId: season.id,
+      },
+      select: {
         faction1: true,
+        faction2: true,
       },
-      orderBy: {
-        _count: {
-          faction1: 'desc',
-        },
-      },
-      take: 1,
     });
 
-    const mostPlayedFaction = factions[0]?.faction1 ?? 'Brak';
+    const champions = await prisma.player.count();
+
+    const games = seasonMatches.length;
+
+    const factionCount = seasonMatches.reduce<Record<string, number>>(
+      (acc, match) => {
+        acc[match.faction1] = (acc[match.faction1] ?? 0) + 1;
+        acc[match.faction2] = (acc[match.faction2] ?? 0) + 1;
+
+        return acc;
+      },
+      {}
+    );
+
+    const mostPlayedFaction =
+      Object.entries(factionCount).sort((a, b) => b[1] - a[1])[0]?.[0] ??
+      'Brak';
 
     const stats = [
       {
@@ -36,7 +50,7 @@ router.get('/', async (_req, res) => {
         label: 'Najczęściej rozgrywany zamek',
       },
       {
-        value: 'I',
+        value: season.id,
         label: 'Sezon',
       },
     ];

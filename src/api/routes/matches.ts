@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../../lib/prisma.js';
+import { getActiveSeason } from '../../services/seasonService.js';
 
 const router = Router();
 
@@ -37,6 +38,7 @@ router.post('/', async (req, res) => {
     });
 
     const winnerId = score1 > score2 ? p1.id : p2.id;
+    const season = await getActiveSeason();
 
     const match = await prisma.match.create({
       data: {
@@ -47,6 +49,7 @@ router.post('/', async (req, res) => {
         score1,
         score2,
         map,
+        seasonId: season.id,
       },
     });
 
