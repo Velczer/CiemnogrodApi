@@ -182,54 +182,38 @@ export async function submitTournamentMatchResult(
 
   // KONIEC TURNIEJU
   if (match.round === 'Final' && !match.nextMatchNumber) {
-    const thirdPlaceMatch = await prisma.tournamentMatch.findFirst({
+    const winnerPlayer = await prisma.player.findUnique({
       where: {
-        tournamentId: tournament.id,
-        round: 'ThirdPlace',
+        discordId: winner.id,
       },
     });
 
-    if (!thirdPlaceMatch || thirdPlaceMatch.status === 'completed') {
-      const winnerPlayer = await prisma.player.findUnique({
+    if (winnerPlayer) {
+      await prisma.player.update({
         where: {
-          discordId: winner.id,
+          id: winnerPlayer.id,
+        },
+        data: {
+          tournamentWins: {
+            increment: 1,
+          },
         },
       });
-
-      if (winnerPlayer) {
-        await prisma.player.update({
-          where: {
-            id: winnerPlayer.id,
-          },
-          data: {
-            tournamentWins: {
-              increment: 1,
-            },
-          },
-        });
-      }
-
-      await prisma.tournament.update({
-        where: { id: tournament.id },
-        data: { status: 'completed' },
-      });
-
-      return {
-        winner,
-        tournamentCompleted: true,
-      };
     }
+
+    await prisma.tournament.update({
+      where: {
+        id: tournament.id,
+      },
+      data: {
+        status: 'completed',
+      },
+    });
 
     return {
       winner,
-      tournamentCompleted: false,
+      tournamentCompleted: true,
       nextMatchNumber: null,
     };
   }
-
-  return {
-    winner,
-    tournamentCompleted: false,
-    nextMatchNumber: match.nextMatchNumber,
-  };
 }

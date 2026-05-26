@@ -79,8 +79,8 @@ export function generateBracket(players: TournamentPlayer[]) {
 
   const semifinal1Number = matchNumber++;
   const semifinal2Number = matchNumber++;
-  const finalNumber = matchNumber++;
   const thirdPlaceNumber = matchNumber++;
+  const finalNumber = matchNumber++;
 
   matches.push({
     matchNumber: semifinal1Number,
@@ -125,10 +125,10 @@ export function generateBracket(players: TournamentPlayer[]) {
   });
 
   matches.push({
-    matchNumber: finalNumber,
-    round: 'Final',
+    matchNumber: thirdPlaceNumber,
+    round: 'ThirdPlace',
     roundOrder: finalRoundOrder,
-    matchOrder: 1,
+    matchOrder: 2,
     player1: null,
     player2: null,
     nextMatchNumber: null,
@@ -140,10 +140,10 @@ export function generateBracket(players: TournamentPlayer[]) {
   });
 
   matches.push({
-    matchNumber: thirdPlaceNumber,
-    round: 'ThirdPlace',
+    matchNumber: finalNumber,
+    round: 'Final',
     roundOrder: finalRoundOrder,
-    matchOrder: 2,
+    matchOrder: 1,
     player1: null,
     player2: null,
     nextMatchNumber: null,
